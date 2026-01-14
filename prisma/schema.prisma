@@ -1,50 +1,87 @@
+// Prisma Schema - Final Version
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
 }
 
-enum StatusPengajuan {
-  DIAJUKAN
-  DIPROSES
-  DITOLAK
-  SELESAI
+/* =======================
+   ENUMS
+======================= */
+
+enum Role {
+  USER
+  ADMIN
 }
+
+enum SubmissionStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+}
+
+/* =======================
+   MODELS
+======================= */
 
 model User {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  nik       String     @unique
-  email     String?    @unique
+  email     String   @unique
   password  String
+  phone     String
+  address   String
+  role      Role     @default(USER)
 
-  pengajuan Pengajuan[]
+  submissions Submission[]
 
-  createdAt DateTime   @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Layanan {
-  id        Int        @id @default(autoincrement())
-  name      String
-  deskripsi String?
+model Submission {
+  id           Int              @id @default(autoincrement())
+  userId       Int
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  pengajuan Pengajuan[]
+  serviceType  String
+  description  String
+  status       SubmissionStatus @default(PENDING)
 
-  createdAt DateTime   @default(now())
+  submittedAt  DateTime         @default(now())
+  completedAt  DateTime?
+  documentUrl  String?
+
+  attachments  Attachment[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
-model Pengajuan {
-  id          Int             @id @default(autoincrement())
-  userId      Int
-  layananId   Int
+model Attachment {
+  id            Int        @id @default(autoincrement())
+  submissionId  Int
+  submission    Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
-  documentPdf String          // path ke 1 file PDF gabungan
-  status      StatusPengajuan @default(DIAJUKAN)
+  url           String
 
-  user        User            @relation(fields: [userId], references: [id])
-  layanan     Layanan         @relation(fields: [layananId], references: [id])
+  createdAt     DateTime   @default(now())
+}
 
-  createdAt   DateTime        @default(now())
+model NewsItem {
+  id          Int      @id @default(autoincrement())
+  title       String
+  image       String
+  description String
+  date        DateTime
+
+  createdAt   DateTime @default(now())
 }
